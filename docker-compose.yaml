@@ -1,0 +1,33 @@
+version: '3'
+services:
+  proxy-client:
+    image: alpine/socat
+    command: tcp-listen:5433,fork,reuseaddr tcp-connect:proxy-server:5432
+    networks:
+      - proxy
+    ports:
+      - "5433:5433"
+  proxy-server:
+    image: mitmproxy/mitmproxy
+    command: mitmweb --listen-port 5432 --web-host 0.0.0.0
+    volumes:
+      - ./:/home/mitmproxy/.mitmproxy
+    networks:
+      - proxy
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+  postgres-server:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    networks:
+      - proxy
+networks:
+  proxy:
+    driver: bridge
